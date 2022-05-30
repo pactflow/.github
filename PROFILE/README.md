@@ -51,4 +51,4 @@ Prevent integration issues before you commit, instead of in production or during
 
 ## Stats
 
-![Metrics](../github-metrics.svg)
+![Metrics](https://github.com/pactflow/.github/blob/main/github-metrics.svg)
