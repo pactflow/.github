@@ -50,7 +50,7 @@ jobs:
       BRANCH_TO_TEST: master
     steps:
       - run: echo "BRANCH_TO_TEST=main" >> $GITHUB_ENV 
-        if: ${{ matrix.repos == 'pactflow/example-bi-directional-provider-cypress' }}
+        if: ${{ matrix.repos == 'pactflow/example-bi-directional-consumer-cypress' }}
         name: conditionally set branch name, dependant on repo (some use main, over master)
       - name: cross test pact-ruby-standalone / pact_broker-client / pact-ruby-cli (docker)
         uses: benc-uk/workflow-dispatch@v1
