@@ -49,7 +49,7 @@ jobs:
       PACT_CLI_STANDALONE_VERSION: ${{ needs.setup.outputs.PACT_CLI_STANDALONE_VERSION}}
       BRANCH_TO_TEST: master
     steps:
-      - run: echo "BRANCH_TO_TEST=os_selection" >> $GITHUB_ENV 
+      - run: echo "BRANCH_TO_TEST=os_detection" >> $GITHUB_ENV 
         if: ${{ matrix.repos == 'pactflow/example-bi-directional-provider-cypress' }}
         name: conditionally set branch name, dependant on repo (some use main, over master)
       - name: cross test pact-ruby-standalone / pact_broker-client / pact-ruby-cli (docker)
