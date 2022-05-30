@@ -55,7 +55,7 @@ jobs:
       - name: cross test pact-ruby-standalone / pact_broker-client / pact-ruby-cli (docker)
         uses: benc-uk/workflow-dispatch@v1
         with:
-          branch: ${{ env.BRANCH_TO_TEST }}
+          ref: ${{ env.BRANCH_TO_TEST }}
           workflow: test_pact_cli_tools_cross_os
           repo: ${{ matrix.repos }}
           token: ${{ secrets.GHTOKENFORTRIGGERINGPACTDOCSUPDATE }}
