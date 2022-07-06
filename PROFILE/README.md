@@ -40,7 +40,7 @@ Videos
 > Testing microservices shouldn't involve setting up complex end-to-end test environments, creating lengthy integration suites and managing test data. Stop wasting time, and start releasing.
 
 -  ![dev](https://raw.githubusercontent.com/pact-foundation/pact.io/master/pages/assets/img/icons/theme/devices/laptop-macbook.svg) Find bugs in dev - 
-Prevent integration issues before you commit, instead of in production or during integration test Prevent integration issues before you commit, instead of in production or during integration test
+Prevent integration issues before you commit, instead of in production or during integration test
 - ![dev](https://raw.githubusercontent.com/pact-foundation/pact.io/master/pages/assets/img/icons/theme/general/thunder-move.svg) Deploy faster, safer & more often - Pact provides a guarantee that systems are compatible, so you can deploy your microservices and web apps independently and safely
 - ![dev](https://raw.githubusercontent.com/pact-foundation/pact.io/master/pages/assets/img/icons/theme/devices/server.svg) Remove complex end-to-end environments - Reduce (or removing entirely) the need for complex, costly and hard-to-manage integration test environments
 - ![dev](https://raw.githubusercontent.com/pact-foundation/pact.io/master/pages/assets/img/icons/theme/files/deleted-file.svg) Stop relying on unreliable test data - Finding and managing test data is a key pain point for engineering teams - with Pact, you can significantly reduce your reliance on flakey test data
