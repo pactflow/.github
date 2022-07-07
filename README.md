@@ -18,7 +18,7 @@ With this new feature you can choose:
 - Your provider side verification tool—you bring your own tool
 - Your way of working—third parties, provider first, consumer first, design first, legacy systems 
 - Your way to share with your Pactflow Broker—CLI Ruby / CLI Docker / Standalone scripts
-- To deploys on Fridays, with confidence, using Pactflow ⚡️
+- To deploy on Fridays, with confidence, using Pactflow ⚡️
 
 ### Getting started
 
