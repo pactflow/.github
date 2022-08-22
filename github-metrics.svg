@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="1396" class="">
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="1413" class="">
     <defs>
         <style/>
     </defs>
@@ -324,6 +324,27 @@
                                         <path fill-rule="evenodd" d="M10.5 7.75a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm1.43.75a4.002 4.002 0 01-7.86 0H.75a.75.75 0 110-1.5h3.32a4.001 4.001 0 017.86 0h3.32a.75.75 0 110 1.5h-3.32z"/>
                                     </svg>
                                     <div class="content">
+                                        <div class="user">github-actions[bot]</div>
+                                        pushed 1 commit in
+                                        <span class="repo">pactflow/.github</span>
+                                    </div>
+                                </div>
+                                <div class="details">
+                                    <div>on branch <span class="code">main</span></div>
+                                    <div class="commit">
+                                        <div class="sha">#9ae846d</div>
+                                        <div class="message">Update github-metrics.svg - [Skip GitHub Action]</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="row fill-width">
+                            <section class="activity">
+                                <div class="field">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+                                        <path fill-rule="evenodd" d="M10.5 7.75a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm1.43.75a4.002 4.002 0 01-7.86 0H.75a.75.75 0 110-1.5h3.32a4.001 4.001 0 017.86 0h3.32a.75.75 0 110 1.5h-3.32z"/>
+                                    </svg>
+                                    <div class="content">
                                         <div class="user">YOU54F</div>
                                         pushed 2 commits in
                                         <span class="repo">pactflow/katacoda-workshops</span>
@@ -398,24 +419,6 @@
                                         <img class="gemoji" src="data:image/png;base64,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" height="16" width="16" alt="" />
                                         This issue was automatically closed by Mend because the vulnerable library in the specific branch(es) was either marked as ignored or it is no longer part of the Mend inventory.
                                     </div>
-                                </div>
-                            </section>
-                        </div>
-                        <div class="row fill-width">
-                            <section class="activity">
-                                <div class="field">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
-                                        <path d="M11.28 6.78a.75.75 0 00-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l3.5-3.5z"/>
-                                        <path fill-rule="evenodd" d="M16 8A8 8 0 110 8a8 8 0 0116 0zm-1.5 0a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
-                                    </svg>
-                                    <div class="content">
-                                        <div class="user">mend-for-github-com[bot]</div>
-                                        closed
-                                        <span class="issue">#9 CVE-2021-3749 (High) detected in axios-0.19.2.tgz - autoclosed</span>
-                                    </div>
-                                </div>
-                                <div class="details">
-                                    <div>opened by mend-for-github-com[bot] in <span class="repo">pactflow/katacoda-workshops</span></div>
                                 </div>
                             </section>
                         </div>
@@ -498,7 +501,7 @@
                                 <div class="title">
                                     <span class="prefix">Great</span>
                                     developers
-                                    <span class="gh">ranked 416k out of 96m users</span>
+                                    <span class="gh">ranked 417k out of 96m users</span>
                                 </div>
                                 <div class="text">Published 55 public repositories</div>
                             </div>
@@ -513,7 +516,7 @@
                                     </defs>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="gauge info">
                                         <circle class="gauge-base" r="25" cx="28" cy="28"/>
-                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="2.334017796030122 155"/>
+                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="2.5462012320328578 155"/>
                                     </svg>
                                     <svg xmlns="http://www.w3.org/2000/svg" mask="url(#mask)">
                                         <g xmlns="http://www.w3.org/2000/svg" transform="translate(5 4)" fill="none" fill-rule="evenodd">
@@ -699,7 +702,7 @@
                 </div>
             </section>
             <footer>
-                <span>Last updated 21 Aug 2022, 01:25:29 (timezone Europe/London) with lowlighter/metrics@3.27.0</span>
+                <span>Last updated 22 Aug 2022, 01:28:42 (timezone Europe/London) with lowlighter/metrics@3.27.0</span>
             </footer>
         </div>
         <div xmlns="http://www.w3.org/1999/xhtml" id="metrics-end"></div>
