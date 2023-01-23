@@ -1,4 +1,4 @@
-# Pactflow - The most comprehensive contract testing platform. Worry less about testing and deploying distributed systems.
+# PactFlow - The most comprehensive contract testing platform. Worry less about testing and deploying distributed systems.
 
 - [PactFlow](https://pactflow.io) - The most comprehensive contract testing platform. Worry less about testing and deploying distributed systems.
 - [Bi-Directional Contract Testing Documentation](https://docs.pactflow.io/docs/bi-directional-contract-testing)
