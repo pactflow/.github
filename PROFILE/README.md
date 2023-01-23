@@ -1,6 +1,6 @@
 # Pactflow - The most comprehensive contract testing platform. Worry less about testing and deploying distributed systems.
 
-- [Pactflow](https://pactflow.io) - The most comprehensive contract testing platform. Worry less about testing and deploying distributed systems.
+- [PactFlow](https://pactflow.io) - The most comprehensive contract testing platform. Worry less about testing and deploying distributed systems.
 - [Bi-Directional Contract Testing Documentation](https://docs.pactflow.io/docs/bi-directional-contract-testing)
 - [Consumer Driven Contract Testing Documentation](https://docs.pact.io/g)
 - [Pact Foundation Slack](https://slack.pact.io/)
@@ -17,8 +17,8 @@ With this new feature you can choose:
 - Your provider side spec type—currently openAPI spec plus more coming soon 
 - Your provider side verification tool—you bring your own tool
 - Your way of working—third parties, provider first, consumer first, design first, legacy systems 
-- Your way to share with your Pactflow Broker—CLI Ruby / CLI Docker / Standalone scripts
-- To deploy on Fridays, with confidence, using Pactflow ⚡️
+- Your way to share with your PactFlow Broker—CLI Ruby / CLI Docker / Standalone scripts
+- To deploy on Fridays, with confidence, using PactFlow ⚡️
 
 ### Getting started
 
