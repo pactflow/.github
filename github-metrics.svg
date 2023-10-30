@@ -332,6 +332,27 @@
                                 <div class="details">
                                     <div>on branch <span class="code">main</span></div>
                                     <div class="commit">
+                                        <div class="sha">#0bd411e</div>
+                                        <div class="message">Update github-metrics.svg - [Skip GitHub Action]</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="row fill-width">
+                            <section class="activity">
+                                <div class="field">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+                                        <path fill-rule="evenodd" d="M10.5 7.75a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm1.43.75a4.002 4.002 0 01-7.86 0H.75a.75.75 0 110-1.5h3.32a4.001 4.001 0 017.86 0h3.32a.75.75 0 110 1.5h-3.32z"/>
+                                    </svg>
+                                    <div class="content">
+                                        <div class="user">github-actions[bot]</div>
+                                        pushed 1 commit in
+                                        <span class="repo">pactflow/.github</span>
+                                    </div>
+                                </div>
+                                <div class="details">
+                                    <div>on branch <span class="code">main</span></div>
+                                    <div class="commit">
                                         <div class="sha">#b8fe493</div>
                                         <div class="message">Update github-metrics.svg - [Skip GitHub Action]</div>
                                     </div>
@@ -400,27 +421,6 @@ Fix typos and grammar in bdc.mdx</div>
                                 </div>
                             </section>
                         </div>
-                        <div class="row fill-width">
-                            <section class="activity">
-                                <div class="field">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
-                                        <path fill-rule="evenodd" d="M10.5 7.75a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm1.43.75a4.002 4.002 0 01-7.86 0H.75a.75.75 0 110-1.5h3.32a4.001 4.001 0 017.86 0h3.32a.75.75 0 110 1.5h-3.32z"/>
-                                    </svg>
-                                    <div class="content">
-                                        <div class="user">github-actions[bot]</div>
-                                        pushed 1 commit in
-                                        <span class="repo">pactflow/.github</span>
-                                    </div>
-                                </div>
-                                <div class="details">
-                                    <div>on branch <span class="code">main</span></div>
-                                    <div class="commit">
-                                        <div class="sha">#1e306b0</div>
-                                        <div class="message">Update github-metrics.svg - [Skip GitHub Action]</div>
-                                    </div>
-                                </div>
-                            </section>
-                        </div>
                     </section>
                 </div>
             </section>
@@ -443,7 +443,7 @@ Fix typos and grammar in bdc.mdx</div>
                                     </defs>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="gauge info">
                                         <circle class="gauge-base" r="25" cx="28" cy="28"/>
-                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="81.53148528405204 155"/>
+                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="81.74366872005477 155"/>
                                     </svg>
                                     <svg xmlns="http://www.w3.org/2000/svg" mask="url(#mask)">
                                         <g xmlns="http://www.w3.org/2000/svg" transform="translate(5 4)" fill="none" fill-rule="evenodd">
@@ -536,7 +536,7 @@ Fix typos and grammar in bdc.mdx</div>
                                 <div class="title">
                                     <span class="prefix">Great</span>
                                     developers
-                                    <span class="gh">ranked 346k out of 123m users</span>
+                                    <span class="gh">ranked 346k out of 124m users</span>
                                 </div>
                                 <div class="text">Published 69 public repositories</div>
                             </div>
@@ -621,7 +621,7 @@ Fix typos and grammar in bdc.mdx</div>
                                 <div class="title">
                                     <span class="prefix"></span>
                                     Inspirers
-                                    <span class="gh">ranked 26.1k out of 88.8m repositories</span>
+                                    <span class="gh">ranked 26.1k out of 88.7m repositories</span>
                                 </div>
                                 <div class="text">Maintaining or created a repository which has been forked 424 times</div>
                             </div>
@@ -692,7 +692,7 @@ Fix typos and grammar in bdc.mdx</div>
                                 <div class="title">
                                     <span class="prefix"></span>
                                     Maintainers
-                                    <span class="gh">ranked 677k out of 88.8m repositories</span>
+                                    <span class="gh">ranked 677k out of 88.7m repositories</span>
                                 </div>
                                 <div class="text">Maintaining a repository with 39 stars</div>
                             </div>
@@ -701,7 +701,7 @@ Fix typos and grammar in bdc.mdx</div>
                 </div>
             </section>
             <footer>
-                <span>Last updated 29 Oct 2023, 01:24:00 (timezone Europe/London) with lowlighter/metrics@3.34.0</span>
+                <span>Last updated 30 Oct 2023, 00:22:58 (timezone Europe/London) with lowlighter/metrics@3.34.0</span>
             </footer>
         </div>
         <div xmlns="http://www.w3.org/1999/xhtml" id="metrics-end"></div>
