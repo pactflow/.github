@@ -1,4 +1,4 @@
-name: SmartBear Supported Pull Request Notify
+name: SmartBear Pull Request Notify
 
 # Requirements:
 #   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
