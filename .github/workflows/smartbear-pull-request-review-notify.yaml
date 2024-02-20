@@ -28,9 +28,9 @@ jobs:
         PULL_REQUEST_URL: ${{ github.event.pull_request.html_url }}
         PULL_REQUEST_BODY: ${{ github.event.pull_request.body }}
         PULL_REQUEST_COMPARE_BRANCH_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
-        PULL_REQUEST_COMPARE_BRANCH_NAME : ${{ github.event.pull_request.head.ref }}
+        PULL_REQUEST_COMPARE_BRANCH_NAME : ${{ github.event.pull_request.base.ref }}
         PULL_REQUEST_BASE_BRANCH_OWNER: ${{ github.event.pull_request.base.repo.owner.login }}
-        PULL_REQUEST_BASE_BRANCH_NAME : ${{ github.event.pull_request.base.ref }}
+        PULL_REQUEST_BASE_BRANCH_NAME : ${{ github.event.pull_request.head.ref }}
         IS_SEND_HERE_MENTION : false
         MAKE_PRETTY : false
         MAKE_COMPACT : true
