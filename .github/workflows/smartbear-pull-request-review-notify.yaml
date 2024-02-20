@@ -32,5 +32,6 @@ jobs:
         PULL_REQUEST_BASE_BRANCH_OWNER: ${{ github.event.pull_request.base.repo.owner.login }}
         PULL_REQUEST_BASE_BRANCH_NAME : ${{ github.event.pull_request.base.ref }}
         IS_SEND_HERE_MENTION : false
+        MAKE_PRETTY : false
         MAKE_COMPACT : true
         IS_PR_FROM_FORK: false
