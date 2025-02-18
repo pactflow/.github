@@ -17,7 +17,7 @@ jobs:
     name: Transition Jira ticket to Close
     steps:
     - name: login
-      uses: atlassian/gajira-login@v3
+      uses: atlassian/gajira-login@ca13f8850ea309cf44a6e4e0c49d9aa48ac3ca4c # v3
         JIRA_BASE_URL: ${{ secrets.SMARTBEAR_JIRA_BASE_URL }}
         JIRA_USER_EMAIL: ${{ secrets.SMARTBEAR_JIRA_USER_EMAIL }}
         JIRA_API_TOKEN: ${{ secrets.SMARTBEAR_JIRA_API_TOKEN }}
@@ -27,7 +27,7 @@ jobs:
 
     - name: Search
       id: search
-      uses: tomhjp/gh-action-jira-search@v0.1.0
+      uses: tomhjp/gh-action-jira-search@e099f122d99bf8f12707c157a98166b16498466c # v0.1.0
       with:
         jql: 'summary ~ "${{ github.event.repository.name }}#${{ github.event.issue.number }}:" AND project=${{ vars.SMARTBEAR_JIRA_PROJECT }}'
 
@@ -37,7 +37,7 @@ jobs:
 
     - name: Transition issue
       if: steps.search.outputs.issue != ''
-      uses: atlassian/gajira-transition@v3
+      uses: atlassian/gajira-transition@4749176faf14633954d72af7a44d7f2af01cc92b # v3
       with:
         issue: ${{ steps.search.outputs.issue }}
         transition: "Done"
