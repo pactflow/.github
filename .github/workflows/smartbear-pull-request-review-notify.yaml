@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Notify slack when PR is ready for review
-      uses: ilia/request-review-action@v0.0.4
+      uses: ilia/request-review-action@95a3ab96ec207b3590095632df8e72016d81cffb # v0.0.4
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
         PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}

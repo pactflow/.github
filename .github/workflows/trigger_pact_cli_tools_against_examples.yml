@@ -53,7 +53,7 @@ jobs:
         if: ${{ matrix.repos == 'pactflow/example-bi-directional-consumer-cypress' }}
         name: conditionally set branch name, dependant on repo (some use main, over master)
       - name: cross test pact-ruby-standalone / pact_broker-client / pact-ruby-cli (docker)
-        uses: benc-uk/workflow-dispatch@v1
+        uses: benc-uk/workflow-dispatch@e2e5e9a103e331dad343f381a29e654aea3cf8fc # v1
         with:
           ref: ${{ env.BRANCH_TO_TEST }}
           workflow: test_pact_cli_tools_cross_os
