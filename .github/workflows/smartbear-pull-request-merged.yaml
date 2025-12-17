@@ -1,0 +1,43 @@
+name: SmartBear Supported Pull Request Merged
+
+# Example of trigger for this workflow:
+#
+# on:
+#   pull_request:
+#     types: 
+#       - closed
+
+on:
+  workflow_call:  
+    
+jobs:
+  if_merged:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    name: Transition Jira ticket to Close
+    steps:
+    - name: login
+      uses: atlassian/gajira-login@ca13f8850ea309cf44a6e4e0c49d9aa48ac3ca4c # v3
+        JIRA_BASE_URL: ${{ secrets.SMARTBEAR_JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.SMARTBEAR_JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.SMARTBEAR_JIRA_API_TOKEN }}
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+
+    - run: echo ${{ github.event.pull_request.title }}
+
+    - name: Search
+      id: search
+      uses: tomhjp/gh-action-jira-search@04700b457f317c3e341ce90da5a3ff4ce058f2fa # v0.2.2
+      with:
+        jql: 'summary ~ "${{ github.event.repository.name }}#${{ github.event.issue.number }}:" AND project=${{ vars.SMARTBEAR_JIRA_PROJECT }}'
+
+    - name: Log
+      run: echo "Found issue ${{ steps.search.outputs.issue }}"
+
+
+    - name: Transition issue
+      if: steps.search.outputs.issue != ''
+      uses: atlassian/gajira-transition@4749176faf14633954d72af7a44d7f2af01cc92b # v3
+      with:
+        issue: ${{ steps.search.outputs.issue }}
+        transition: "Done"
