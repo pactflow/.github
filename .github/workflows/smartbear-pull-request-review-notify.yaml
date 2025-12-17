@@ -1,0 +1,29 @@
+name: SmartBear Pull Request Notify
+
+#
+# Requirements:
+#   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+#
+# Example of trigger for this workflow:
+#
+#on:
+#  pull_request:
+#    types:
+#      - opened
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify slack when PR is ready for review
+      uses: ilia/request-review-action@95a3ab96ec207b3590095632df8e72016d81cffb # v0.0.4
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+        PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+        PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
+        PULL_REQUEST_AUTHOR_NAME: ${{ github.event.pull_request.user.login }}
+        PULL_REQUEST_URL: ${{ github.event.pull_request.html_url }}
+        REPO_NAME: ${{ github.event.repository.name }}
