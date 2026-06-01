@@ -1,0 +1,153 @@
+name: Draft PR Reminders
+
+#
+# Requirements:
+#   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}  (org secret — already exists)
+#   ${{ secrets.PACTFLOW_CI_BOT_APP_ID }}       (org secret — already exists)
+#   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
+#
+# Posts a Slack channel message @mentioning each author who has open draft PRs
+# in the pactflow org. Users are grouped by timezone so each group is notified
+# at their local 9am and 3pm on Mondays.
+#
+# Add users in .github/draft-pr-slack-mapping.json:
+#   { "github-login": { "slack_id": "UXXXXXXXXX", "timezone": "AEST" } }
+#
+# Add a new timezone by adding two cron entries (9am + 3pm in UTC) and a
+# matching case branch in the "Resolve timezone group" step below.
+#
+
+on:
+  schedule:
+    - cron: '0 23 * * 0'   # Mon 9am  AEST (UTC+10) — Sun 23:00 UTC
+    - cron: '0 5  * * 1'   # Mon 3pm  AEST (UTC+10) — Mon 05:00 UTC
+    - cron: '30 3 * * 1'   # Mon 9am  IST  (UTC+5:30) — Mon 03:30 UTC
+    - cron: '30 9 * * 1'   # Mon 3pm  IST  (UTC+5:30) — Mon 09:30 UTC
+  workflow_dispatch:
+    inputs:
+      timezone_group:
+        description: 'Timezone group to notify (e.g. AEST, IST)'
+        required: true
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.PACTFLOW_CI_BOT_APP_ID }}
+          private-key: ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}
+          owner: pactflow
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve timezone group
+        id: tz
+        run: |
+          if [ -n "${{ inputs.timezone_group }}" ]; then
+            echo "group=${{ inputs.timezone_group }}" >> "$GITHUB_OUTPUT"
+          else
+            case "${{ github.event.schedule }}" in
+              "0 23 * * 0"|"0 5 * * 1") echo "group=AEST" >> "$GITHUB_OUTPUT" ;;
+              "30 3 * * 1"|"30 9 * * 1") echo "group=IST"  >> "$GITHUB_OUTPUT" ;;
+              *) echo "group=UNKNOWN" >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+
+      - name: Find draft PRs and notify Slack
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+          TIMEZONE_GROUP: ${{ steps.tz.outputs.group }}
+        run: |
+          set -euo pipefail
+
+          MAPPING=$(cat .github/draft-pr-slack-mapping.json)
+
+          # All open draft PRs in the org authored by humans
+          PRS=$(gh api graphql -f query='
+          {
+            search(query: "org:pactflow is:pr is:open draft:true", type: ISSUE, first: 100) {
+              nodes {
+                ... on PullRequest {
+                  title
+                  url
+                  createdAt
+                  author { login __typename }
+                  repository { name }
+                }
+              }
+            }
+          }' --jq '
+            [.data.search.nodes[] | select(.author.__typename == "User")]
+            | sort_by(.createdAt)
+          ')
+
+          COUNT=$(echo "$PRS" | jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No draft PRs found — skipping."
+            exit 0
+          fi
+
+          # Build one block per author in this timezone group
+          NOW=$(date -u +%s)
+          BLOCKS=$(echo "$PRS" | jq \
+            --argjson mapping "$MAPPING" \
+            --arg tz "$TIMEZONE_GROUP" \
+            --argjson now "$NOW" '
+            # Keep only PRs whose author is mapped to this timezone group
+            [.[] | . as $pr |
+              ($mapping[$pr.author.login] // null) as $user |
+              select($user != null and $user.timezone == $tz) |
+              { pr: $pr, slack_id: $user.slack_id }
+            ] |
+            if length == 0 then empty else . end |
+
+            # Group by author login
+            group_by(.pr.author.login) |
+
+            # Header block
+            [
+              {
+                "type": "header",
+                "text": { "type": "plain_text", "text": "🚧 Draft PRs needing attention — pactflow org", "emoji": true }
+              }
+            ] +
+
+            # One section per author
+            map(
+              . as $group |
+              ($group[0].slack_id) as $slack_id |
+              ($group[0].pr.author.login) as $login |
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": (
+                    "<@\($slack_id)> has \($group | length) draft PR\(if ($group | length) == 1 then "" else "s" end):\n" +
+                    (
+                      $group | map(
+                        (.pr.createdAt | sub("\\.[0-9]+Z$"; "Z") | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
+                        (($now - $created) / 86400 | floor) as $days |
+                        "• <\(.pr.url)|\(.pr.title)>  —  `\(.pr.repository.name)`  —  \($days)d old"
+                      ) | join("\n")
+                    )
+                  )
+                }
+              }
+            )
+          ')
+
+          # jq exits non-zero and prints nothing if no users matched — catch that
+          if [ -z "$BLOCKS" ] || [ "$BLOCKS" = "null" ]; then
+            echo "No draft PRs for timezone group $TIMEZONE_GROUP — skipping."
+            exit 0
+          fi
+
+          PAYLOAD=$(jq -n --argjson blocks "$BLOCKS" '{"blocks": $blocks}')
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD"
