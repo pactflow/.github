@@ -1,0 +1,102 @@
+name: PR Review Digest
+
+#
+# Requirements:
+#   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}  (org secret — already exists)
+#   ${{ secrets.PACTFLOW_CI_BOT_APP_ID }}       (org secret — already exists)
+#   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
+#
+# Posts a digest of open, non-draft, human-authored pactflow org PRs that:
+#   - have no reviewer assigned
+#   - have all CI checks passing
+#   - do not carry the "DO NOT MERGE" label
+# Runs weekdays at 8:30am and 2:30pm AEST (UTC+10). Silent if nothing to report.
+#
+
+on:
+  schedule:
+    - cron: '30 22 * * 0-4'  # 8:30am AEST Mon–Fri (Sun–Thu UTC)
+    - cron: '30 4 * * 1-5'   # 2:30pm AEST Mon–Fri
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.PACTFLOW_CI_BOT_APP_ID }}
+          private-key: ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}
+          owner: pactflow
+
+      - name: Find unreviewed PRs and notify Slack
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          # Single GraphQL query: open, non-draft, checks passing, no reviewer assigned.
+          # Uses __typename to distinguish human Users from Bots (catches renovate-bot,
+          # dependabot, github-actions etc. without a fragile login-pattern list).
+          PRS=$(gh api graphql -f query='
+          {
+            search(query: "org:pactflow is:pr is:open draft:false review:none status:success", type: ISSUE, first: 100) {
+              nodes {
+                ... on PullRequest {
+                  title
+                  url
+                  createdAt
+                  author { login __typename }
+                  labels(first: 10) { nodes { name } }
+                  reviewRequests(first: 1) { totalCount }
+                  repository { name }
+                }
+              }
+            }
+          }' --jq '
+            [.data.search.nodes[] |
+              select(
+                (.author.__typename == "User") and
+                (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
+                (.reviewRequests.totalCount == 0)
+              )
+            ] | sort_by(.createdAt)
+          ')
+
+          COUNT=$(echo "$PRS" | jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No PRs awaiting a reviewer — skipping Slack notification."
+            exit 0
+          fi
+
+          # Build Slack Block Kit payload
+          NOW=$(date -u +%s)
+          BLOCKS=$(echo "$PRS" | jq --argjson now "$NOW" '
+            [
+              {
+                "type": "header",
+                "text": { "type": "plain_text", "text": "PRs awaiting a reviewer — pactflow org", "emoji": true }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": (
+                    map(
+                      (.createdAt | sub("\\.[0-9]+Z$"; "Z") | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
+                      (($now - $created) / 86400 | floor) as $days |
+                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  @\(.author.login)  —  :white_check_mark: \($days)d ago"
+                    ) | join("\n")
+                  )
+                }
+              }
+            ]
+          ')
+
+          PAYLOAD=$(jq -n --argjson blocks "$BLOCKS" '{"blocks": $blocks}')
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD"
