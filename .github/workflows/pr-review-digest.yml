@@ -1,0 +1,96 @@
+name: PR Review Digest
+
+#
+# Requirements:
+#   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}  (org secret — already exists)
+#   ${{ secrets.GH_PAT }}                       (PAT with repo + read:org scopes)
+#
+# Posts a digest of open, non-draft pactflow org PRs with no reviews (or
+# pending review requests) that have been open for at least 1 business day.
+# Runs weekdays at 8:30am and 2:30pm AEST (UTC+10). Silent if nothing to report.
+#
+
+on:
+  schedule:
+    - cron: '30 22 * * 0-4'  # 8:30am AEST Mon–Fri (Sun–Thu UTC)
+    - cron: '30 4 * * 1-5'   # 2:30pm AEST Mon–Fri
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find unreviewed PRs and notify Slack
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          # Weekend-aware cutoff: Monday runs look back 72h (covers Friday PRs)
+          DOW=$(date -u +%u)  # 1=Mon ... 7=Sun
+          if [ "$DOW" -eq 1 ]; then
+            CUTOFF=$(date -u -d '72 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          else
+            CUTOFF=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          fi
+
+          # Query 1: no reviews submitted
+          NO_REVIEW=$(gh search prs \
+            --owner pactflow \
+            --state open \
+            --draft=false \
+            --review=none \
+            --json number,title,url,repository,createdAt,author \
+            --limit 100)
+
+          # Query 2: review requested but not yet submitted
+          REVIEW_REQUIRED=$(gh search prs \
+            --owner pactflow \
+            --state open \
+            --draft=false \
+            --review=required \
+            --json number,title,url,repository,createdAt,author \
+            --limit 100)
+
+          # Merge, deduplicate by url, filter by cutoff
+          PRS=$(echo "$NO_REVIEW $REVIEW_REQUIRED" | jq -s '
+            [ add | unique_by(.url)[] |
+              select(.createdAt < "'"$CUTOFF"'") ] |
+            sort_by(.createdAt)
+          ')
+
+          COUNT=$(echo "$PRS" | jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No unreviewed PRs older than cutoff — skipping Slack notification."
+            exit 0
+          fi
+
+          # Build Slack Block Kit payload
+          NOW=$(date -u +%s)
+          BLOCKS=$(echo "$PRS" | jq --argjson now "$NOW" '
+            [
+              {
+                "type": "header",
+                "text": { "type": "plain_text", "text": "Unreviewed PRs — pactflow org", "emoji": true }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": (
+                    map(
+                      (.createdAt | sub("\\.[0-9]+Z$"; "Z") | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
+                      (($now - $created) / 86400 | floor) as $days |
+                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  @\(.author.login)  —  \($days)d ago"
+                    ) | join("\n")
+                  )
+                }
+              }
+            ]
+          ')
+
+          PAYLOAD=$(jq -n --argjson blocks "$BLOCKS" '{"blocks": $blocks}')
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD"
