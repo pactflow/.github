@@ -1,3 +1,13 @@
 {
-  "github-login": { "slack_id": "UXXXXXXXXX", "timezone": "AEST" }
+  "Ilia":           { "slack_id": "U041B58NDMY", "timezone": "AEST" },
+  "rholshausen":    { "slack_id": "U03BGDVLP6V", "timezone": "AEST" },
+  "impurist":       { "slack_id": "U07UYLQ3PPB", "timezone": "AEST" },
+  "tuan-pham":      { "slack_id": "U05T3FXBJTC", "timezone": "AEST" },
+  "JP-Ellis":       { "slack_id": "U05NAM4B8NQ", "timezone": "AEST" },
+  "vwong":          { "slack_id": "U04KU3CEZ8T", "timezone": "AEST" },
+  "mefellows":      { "slack_id": "U03B0UU54KX", "timezone": "AEST" },
+  "prateek0411999": { "slack_id": "U079802U7KQ", "timezone": "IST"  },
+  "Saup21":         { "slack_id": "U062Y4Y51DM", "timezone": "IST"  },
+  "kevinrvaz":      { "slack_id": "U08QE19LCRM", "timezone": "IST"  },
+  "YOU54F":         { "slack_id": "U03B3R6PHPC", "timezone": "GMT"  }
 }

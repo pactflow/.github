@@ -23,6 +23,8 @@ on:
     - cron: '0 5  * * 1'   # Mon 3pm  AEST (UTC+10) — Mon 05:00 UTC
     - cron: '30 3 * * 1'   # Mon 9am  IST  (UTC+5:30) — Mon 03:30 UTC
     - cron: '30 9 * * 1'   # Mon 3pm  IST  (UTC+5:30) — Mon 09:30 UTC
+    - cron: '0 9  * * 1'   # Mon 9am  GMT  (UTC+0)    — Mon 09:00 UTC
+    - cron: '0 15 * * 1'   # Mon 3pm  GMT  (UTC+0)    — Mon 15:00 UTC
   workflow_dispatch:
     inputs:
       timezone_group:
@@ -51,8 +53,9 @@ jobs:
             echo "group=${{ inputs.timezone_group }}" >> "$GITHUB_OUTPUT"
           else
             case "${{ github.event.schedule }}" in
-              "0 23 * * 0"|"0 5 * * 1") echo "group=AEST" >> "$GITHUB_OUTPUT" ;;
+              "0 23 * * 0"|"0 5 * * 1")  echo "group=AEST" >> "$GITHUB_OUTPUT" ;;
               "30 3 * * 1"|"30 9 * * 1") echo "group=IST"  >> "$GITHUB_OUTPUT" ;;
+              "0 9 * * 1"|"0 15 * * 1")  echo "group=GMT"  >> "$GITHUB_OUTPUT" ;;
               *) echo "group=UNKNOWN" >> "$GITHUB_OUTPUT" ;;
             esac
           fi
