@@ -3,7 +3,7 @@ name: Draft PR Reminders
 #
 # Requirements:
 #   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}  (org secret — already exists)
-#   ${{ secrets.PACTFLOW_CI_BOT_APP_ID }}       (org secret — already exists)
+#   ${{ vars.PACTFLOW_CI_BOT_APP_ID }}           (org variable — already exists)
 #   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
 #
 # Posts a Slack channel message @mentioning each author who has open draft PRs
@@ -43,7 +43,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.PACTFLOW_CI_BOT_APP_ID }}
+          app-id: ${{ vars.PACTFLOW_CI_BOT_APP_ID }}
           private-key: ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}
           owner: pactflow
 
