@@ -7,29 +7,33 @@ name: Draft PR Reminders
 #   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
 #
 # Posts a Slack channel message @mentioning each author who has open draft PRs
-# in the pactflow org. Users are grouped by timezone so each group is notified
-# at their local 9am and 3pm on Mondays.
+# in the pactflow org. Users are grouped by IANA timezone so each group is
+# notified at their local 9am on Mondays. DST is handled automatically.
 #
 # Add users in .github/draft-pr-slack-mapping.json:
-#   { "github-login": { "slack_id": "UXXXXXXXXX", "timezone": "AEST" } }
+#   { "github-login": { "slack_id": "UXXXXXXXXX", "timezone": "Australia/Melbourne" } }
 #
-# Add a new timezone by adding two cron entries (9am + 3pm in UTC) and a
-# matching case branch in the "Resolve timezone group" step below.
+# Add a new timezone by adding a cron entry with the IANA timezone: field below.
 #
 
 on:
   schedule:
-    - cron: '0 23 * * 0'   # Mon 9am  AEST (UTC+10) — Sun 23:00 UTC
-    - cron: '0 5  * * 1'   # Mon 3pm  AEST (UTC+10) — Mon 05:00 UTC
-    - cron: '30 3 * * 1'   # Mon 9am  IST  (UTC+5:30) — Mon 03:30 UTC
-    - cron: '30 9 * * 1'   # Mon 3pm  IST  (UTC+5:30) — Mon 09:30 UTC
-    - cron: '0 9  * * 1'   # Mon 9am  GMT  (UTC+0)    — Mon 09:00 UTC
-    - cron: '0 15 * * 1'   # Mon 3pm  GMT  (UTC+0)    — Mon 15:00 UTC
+    - cron: '0 9 * * 1'
+      timezone: "Australia/Melbourne"
+    - cron: '0 9 * * 1'
+      timezone: "Asia/Kolkata"
+    - cron: '0 9 * * 1'
+      timezone: "Europe/London"
   workflow_dispatch:
     inputs:
       timezone_group:
-        description: 'Timezone group to notify (e.g. AEST, IST)'
+        description: 'Timezone group to notify'
         required: true
+        type: choice
+        options:
+          - Australia/Melbourne
+          - Asia/Kolkata
+          - Europe/London
 
 jobs:
   remind:
@@ -52,12 +56,18 @@ jobs:
           if [ -n "${{ inputs.timezone_group }}" ]; then
             echo "group=${{ inputs.timezone_group }}" >> "$GITHUB_OUTPUT"
           else
-            case "${{ github.event.schedule }}" in
-              "0 23 * * 0"|"0 5 * * 1")  echo "group=AEST" >> "$GITHUB_OUTPUT" ;;
-              "30 3 * * 1"|"30 9 * * 1") echo "group=IST"  >> "$GITHUB_OUTPUT" ;;
-              "0 9 * * 1"|"0 15 * * 1")  echo "group=GMT"  >> "$GITHUB_OUTPUT" ;;
-              *) echo "group=UNKNOWN" >> "$GITHUB_OUTPUT" ;;
-            esac
+            # All crons share the same string "0 9 * * 1" so we can't distinguish
+            # via github.event.schedule. Instead, find which configured IANA timezone
+            # currently shows 9am — that's the one whose cron just fired.
+            TIMEZONES=("Australia/Melbourne" "Asia/Kolkata" "Europe/London")
+            for tz in "${TIMEZONES[@]}"; do
+              local_hour=$(TZ="$tz" date +%H)
+              if [ "$local_hour" = "09" ]; then
+                echo "group=$tz" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            done
+            echo "group=UNKNOWN" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Find draft PRs and notify Slack
