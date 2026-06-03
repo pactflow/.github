@@ -1,0 +1,5 @@
+steps:
+  - label: ":slack: PR review digest"
+    command: .buildkite/scripts/pr-review-digest.sh
+    agents:
+      queue: pactflow-dev

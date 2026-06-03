@@ -1,0 +1,13 @@
+{
+  "Ilia":           { "slack_id": "U041B58NDMY", "timezone": "Australia/Melbourne" },
+  "rholshausen":    { "slack_id": "U03BGDVLP6V", "timezone": "Australia/Melbourne" },
+  "impurist":       { "slack_id": "U07UYLQ3PPB", "timezone": "Australia/Melbourne" },
+  "tuan-pham":      { "slack_id": "U05T3FXBJTC", "timezone": "Australia/Melbourne" },
+  "JP-Ellis":       { "slack_id": "U05NAM4B8NQ", "timezone": "Australia/Melbourne" },
+  "vwong":          { "slack_id": "U04KU3CEZ8T", "timezone": "Australia/Melbourne" },
+  "mefellows":      { "slack_id": "U03B0UU54KX", "timezone": "Australia/Melbourne" },
+  "prateek0411999": { "slack_id": "U079802U7KQ", "timezone": "Asia/Kolkata"         },
+  "Saup21":         { "slack_id": "U062Y4Y51DM", "timezone": "Asia/Kolkata"         },
+  "kevinrvaz":      { "slack_id": "U08QE19LCRM", "timezone": "Asia/Kolkata"         },
+  "YOU54F":         { "slack_id": "U03B3R6PHPC", "timezone": "Europe/London"        }
+}

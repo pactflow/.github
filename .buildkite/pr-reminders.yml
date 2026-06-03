@@ -1,0 +1,10 @@
+steps:
+  - label: ":memo: Draft PR reminders – ${TIMEZONE_GROUP}"
+    command: .buildkite/scripts/draft-pr-reminders.sh
+    agents:
+      queue: pactflow-dev
+
+  - label: ":eyes: Ready PR reminders – ${TIMEZONE_GROUP}"
+    command: .buildkite/scripts/ready-pr-reminders.sh
+    agents:
+      queue: pactflow-dev
