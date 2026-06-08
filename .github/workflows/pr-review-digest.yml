@@ -41,9 +41,17 @@ jobs:
           # Single GraphQL query: open, non-draft, checks passing, no reviewer assigned.
           # Uses __typename to distinguish human Users from Bots (catches renovate-bot,
           # dependabot, github-actions etc. without a fragile login-pattern list).
+          #
+          # NOTE: "status:success" is intentionally omitted from the search query.
+          # Org-wide GitHub App integrations (Buildkite, SonarQube, Renovate, etc.) register
+          # check suites on every commit but never run for repos with no config. These suites
+          # stay "queued" indefinitely, making GitHub's search consider the commit PENDING
+          # even when all real CI checks have passed. Instead we fetch the statusCheckRollup
+          # for the latest commit and accept any PR where every *completed* check succeeded
+          # (SKIPPED counts as passing; QUEUED/IN_PROGRESS suites are ignored).
           PRS=$(gh api graphql -f query='
           {
-            search(query: "org:pactflow is:pr is:open draft:false review:none status:success", type: ISSUE, first: 100) {
+            search(query: "org:pactflow is:pr is:open draft:false review:none", type: ISSUE, first: 100) {
               nodes {
                 ... on PullRequest {
                   title
@@ -53,6 +61,25 @@ jobs:
                   labels(first: 10) { nodes { name } }
                   reviewRequests(first: 1) { totalCount }
                   repository { name }
+                  commits(last: 1) {
+                    nodes {
+                      commit {
+                        statusCheckRollup {
+                          contexts(first: 100) {
+                            nodes {
+                              ... on CheckRun {
+                                status
+                                conclusion
+                              }
+                              ... on StatusContext {
+                                state
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -61,7 +88,13 @@ jobs:
               select(
                 (.author.__typename == "User") and
                 (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
-                (.reviewRequests.totalCount == 0)
+                (.reviewRequests.totalCount == 0) and
+                # All completed checks must be SUCCESS or SKIPPED; at least one must have completed.
+                (
+                  (.commits.nodes[0].commit.statusCheckRollup.contexts.nodes // []) as $checks |
+                  ($checks | map(select(.status == "COMPLETED")) | length) > 0 and
+                  ($checks | map(select(.status == "COMPLETED" and (.conclusion == "SUCCESS" or .conclusion == "SKIPPED") | not)) | length) == 0
+                )
               )
             ] | sort_by(.createdAt)
           ')
