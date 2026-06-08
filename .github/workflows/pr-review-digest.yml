@@ -54,7 +54,11 @@ jobs:
           # even when all real CI checks have passed. Instead we fetch statusCheckRollup.state
           # for the head commit — this high-level rollup ignores never-started queued suites
           # and reflects only the checks that actually ran.
-          PRS=$(gh api graphql -f query='
+          # gh api graphql exits 1 when the response contains per-node errors
+          # (e.g. repos where the App token lacks statusCheckRollup access).
+          # Capture stdout regardless; the data.search.nodes array is always
+          # present. PRs where state is null are excluded by the jq filter.
+          GQL=$(gh api graphql -f query='
           {
             search(query: "org:pactflow is:pr is:open draft:false review:none", type: ISSUE, first: 100) {
               nodes {
@@ -76,7 +80,9 @@ jobs:
                 }
               }
             }
-          }' | jq --argjson mapping "$MAPPING" '
+          }' 2>/dev/null || true)
+
+          PRS=$(echo "$GQL" | jq --argjson mapping "$MAPPING" '
             [.data.search.nodes[] |
               select(
                 ($mapping[.author.login] != null) and
