@@ -51,9 +51,9 @@ jobs:
           # Org-wide GitHub App integrations (Buildkite, SonarQube, Renovate, etc.) register
           # check suites on every commit but never run for repos with no config. These suites
           # stay "queued" indefinitely, making GitHub's search consider the commit PENDING
-          # even when all real CI checks have passed. Instead we fetch the statusCheckRollup
-          # for the latest commit and accept any PR where every *completed* check succeeded
-          # (SKIPPED counts as passing; QUEUED/IN_PROGRESS suites are ignored).
+          # even when all real CI checks have passed. Instead we fetch statusCheckRollup.state
+          # for the head commit — this high-level rollup ignores never-started queued suites
+          # and reflects only the checks that actually ran.
           PRS=$(gh api graphql -f query='
           {
             search(query: "org:pactflow is:pr is:open draft:false review:none", type: ISSUE, first: 100) {
@@ -69,19 +69,7 @@ jobs:
                   commits(last: 1) {
                     nodes {
                       commit {
-                        statusCheckRollup {
-                          contexts(first: 100) {
-                            nodes {
-                              ... on CheckRun {
-                                status
-                                conclusion
-                              }
-                              ... on StatusContext {
-                                state
-                              }
-                            }
-                          }
-                        }
+                        statusCheckRollup { state }
                       }
                     }
                   }
@@ -94,12 +82,7 @@ jobs:
                 ($mapping[.author.login] != null) and
                 (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
                 (.reviewRequests.totalCount == 0) and
-                # All completed checks must be SUCCESS or SKIPPED; at least one must have completed.
-                (
-                  (.commits.nodes[0].commit.statusCheckRollup.contexts.nodes // []) as $checks |
-                  ($checks | map(select(.status == "COMPLETED")) | length) > 0 and
-                  ($checks | map(select(.status == "COMPLETED" and (.conclusion == "SUCCESS" or .conclusion == "SKIPPED") | not)) | length) == 0
-                )
+                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
               ) |
               . + { slack_id: $mapping[.author.login].slack_id }
             ] | sort_by(.createdAt)
