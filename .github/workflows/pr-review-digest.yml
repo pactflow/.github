@@ -18,6 +18,11 @@ on:
     - cron: '45 21 * * 0-4'  # 7:45am AEST Mon–Fri (Sun–Thu UTC)
     - cron: '45 3 * * 1-5'   # 1:45pm AEST Mon–Fri
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print digest to the log without posting to Slack'
+        type: boolean
+        default: false
 
 jobs:
   digest:
@@ -31,19 +36,36 @@ jobs:
           private-key: ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}
           owner: pactflow
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Find unreviewed PRs and notify Slack
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
         run: |
           set -euo pipefail
 
+          MAPPING=$(cat .github/draft-pr-slack-mapping.json)
+
           # Single GraphQL query: open, non-draft, checks passing, no reviewer assigned.
-          # Uses __typename to distinguish human Users from Bots (catches renovate-bot,
-          # dependabot, github-actions etc. without a fragile login-pattern list).
-          PRS=$(gh api graphql -f query='
+          # Only PRs authored by someone in draft-pr-slack-mapping.json are included,
+          # which filters out bots and unknown contributors automatically.
+          #
+          # CI filtering reads statusCheckRollup.state from the head commit rather than
+          # using "status:success" in the search query. The search qualifier treats any
+          # repo with ghost "queued" check suites (org-wide App integrations that never
+          # run — Buildkite, SonarQube, Renovate, etc.) as PENDING even when all real
+          # CI has passed. statusCheckRollup.state correctly reflects only checks that
+          # actually ran. Requires checks:read on the CI bot GitHub App installation.
+          #
+          # gh api graphql exits 1 when the response contains per-node permission errors.
+          # Capture stdout regardless — data.search.nodes is always present; PRs where
+          # state is null (app not installed on that repo) are excluded by the jq filter.
+          GQL=$(gh api graphql -f query='
           {
-            search(query: "org:pactflow is:pr is:open draft:false review:none status:success", type: ISSUE, first: 100) {
+            search(query: "org:pactflow is:pr is:open draft:false", type: ISSUE, first: 100) {
               nodes {
                 ... on PullRequest {
                   title
@@ -51,18 +73,36 @@ jobs:
                   createdAt
                   author { login __typename }
                   labels(first: 10) { nodes { name } }
-                  reviewRequests(first: 1) { totalCount }
+                  reviewRequests(first: 10) {
+                    nodes {
+                      requestedReviewer { __typename }
+                    }
+                  }
                   repository { name }
+                  commits(last: 1) {
+                    nodes {
+                      commit {
+                        statusCheckRollup { state }
+                      }
+                    }
+                  }
                 }
               }
             }
-          }' --jq '
+          }' 2>/dev/null || true)
+
+          PRS=$(echo "$GQL" | jq --argjson mapping "$MAPPING" '
             [.data.search.nodes[] |
               select(
-                (.author.__typename == "User") and
+                ($mapping[.author.login] != null) and
                 (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
-                (.reviewRequests.totalCount == 0)
-              )
+                # Exclude PRs with a human or team reviewer already assigned.
+                # Bot reviewers (e.g. Copilot) are intentionally ignored — a PR with
+                # only a bot reviewer still needs a human to pick it up.
+                ([.reviewRequests.nodes[] | select(.requestedReviewer.__typename == "User" or .requestedReviewer.__typename == "Team")] | length) == 0 and
+                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
+              ) |
+              . + { slack_id: $mapping[.author.login].slack_id }
             ] | sort_by(.createdAt)
           ')
 
@@ -88,7 +128,7 @@ jobs:
                     map(
                       (.createdAt | sub("\\.[0-9]+Z$"; "Z") | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
                       (($now - $created) / 86400 | floor) as $days |
-                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  @\(.author.login)  —  :white_check_mark: \($days)d ago"
+                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  <@\(.slack_id)>  —  :white_check_mark: \($days)d ago"
                     ) | join("\n")
                   )
                 }
@@ -97,6 +137,12 @@ jobs:
           ')
 
           PAYLOAD=$(jq -n --argjson blocks "$BLOCKS" '{"blocks": $blocks}')
-          curl -s -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d "$PAYLOAD"
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run — Slack payload:"
+            echo "$PAYLOAD" | jq .
+          else
+            curl -s -X POST "$SLACK_WEBHOOK_URL" \
+              -H 'Content-Type: application/json' \
+              -d "$PAYLOAD"
+          fi
