@@ -47,18 +47,19 @@ jobs:
           # Only PRs authored by someone in draft-pr-slack-mapping.json are included,
           # which filters out bots and unknown contributors automatically.
           #
-          # CI filtering uses "status:success" in the search query — this is evaluated
-          # server-side by GitHub's search engine and works with the App token. Reading
-          # check status directly (statusCheckRollup) requires checks:read permission
-          # that the App token does not have.
+          # CI filtering reads statusCheckRollup.state from the head commit rather than
+          # using "status:success" in the search query. The search qualifier treats any
+          # repo with ghost "queued" check suites (org-wide App integrations that never
+          # run — Buildkite, SonarQube, Renovate, etc.) as PENDING even when all real
+          # CI has passed. statusCheckRollup.state correctly reflects only checks that
+          # actually ran. Requires checks:read on the CI bot GitHub App installation.
           #
-          # NOTE: repos with ghost "queued" check suites from org-wide App integrations
-          # (Buildkite, SonarQube, etc.) that never run will be missed by status:success
-          # even when all real CI passes. Fix: remove the unused App integrations from
-          # those repos, or grant the CI bot checks:read permission.
-          PRS=$(gh api graphql -f query='
+          # gh api graphql exits 1 when the response contains per-node permission errors.
+          # Capture stdout regardless — data.search.nodes is always present; PRs where
+          # state is null (app not installed on that repo) are excluded by the jq filter.
+          GQL=$(gh api graphql -f query='
           {
-            search(query: "org:pactflow is:pr is:open draft:false review:none status:success", type: ISSUE, first: 100) {
+            search(query: "org:pactflow is:pr is:open draft:false review:none", type: ISSUE, first: 100) {
               nodes {
                 ... on PullRequest {
                   title
@@ -68,15 +69,25 @@ jobs:
                   labels(first: 10) { nodes { name } }
                   reviewRequests(first: 1) { totalCount }
                   repository { name }
+                  commits(last: 1) {
+                    nodes {
+                      commit {
+                        statusCheckRollup { state }
+                      }
+                    }
+                  }
                 }
               }
             }
-          }' | jq --argjson mapping "$MAPPING" '
+          }' 2>/dev/null || true)
+
+          PRS=$(echo "$GQL" | jq --argjson mapping "$MAPPING" '
             [.data.search.nodes[] |
               select(
                 ($mapping[.author.login] != null) and
                 (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
-                (.reviewRequests.totalCount == 0)
+                (.reviewRequests.totalCount == 0) and
+                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
               ) |
               . + { slack_id: $mapping[.author.login].slack_id }
             ] | sort_by(.createdAt)
