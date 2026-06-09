@@ -18,6 +18,11 @@ on:
     - cron: '45 21 * * 0-4'  # 7:45am AEST Mon–Fri (Sun–Thu UTC)
     - cron: '45 3 * * 1-5'   # 1:45pm AEST Mon–Fri
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print digest to the log without posting to Slack'
+        type: boolean
+        default: false
 
 jobs:
   digest:
@@ -38,6 +43,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
         run: |
           set -euo pipefail
 
@@ -124,6 +130,12 @@ jobs:
           ')
 
           PAYLOAD=$(jq -n --argjson blocks "$BLOCKS" '{"blocks": $blocks}')
-          curl -s -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d "$PAYLOAD"
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run — Slack payload:"
+            echo "$PAYLOAD" | jq .
+          else
+            curl -s -X POST "$SLACK_WEBHOOK_URL" \
+              -H 'Content-Type: application/json' \
+              -d "$PAYLOAD"
+          fi
