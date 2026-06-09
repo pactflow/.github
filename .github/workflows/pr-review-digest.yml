@@ -56,7 +56,6 @@ jobs:
                   url
                   createdAt
                   author { login }
-                  repository { name }
                 }
               }
             }
@@ -95,7 +94,7 @@ jobs:
                     map(
                       (.createdAt | sub("\\.[0-9]+Z$"; "Z") | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
                       (($now - $created) / 86400 | floor) as $days |
-                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  <@\(.slack_id)>  —  \($days)d"
+                      "• <\(.url)|\(.title)>  —  <@\(.slack_id)>  —  \($days)d"
                     ) | join("\n")
                   )
                 }
