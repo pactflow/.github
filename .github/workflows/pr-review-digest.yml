@@ -6,11 +6,9 @@ name: PR Review Digest
 #   ${{ vars.PACTFLOW_CI_BOT_APP_ID }}           (org variable — already exists)
 #   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
 #
-# Posts a digest of open, non-draft, human-authored pactflow org PRs that:
-#   - have no reviewer assigned
-#   - have all CI checks passing
-#   - do not carry the "DO NOT MERGE" label
-# Runs weekdays at 8:30am and 2:30pm AEST (UTC+10). Silent if nothing to report.
+# Posts a digest of all open, non-draft pactflow org PRs authored by someone
+# in .github/draft-pr-slack-mapping.json. Runs weekdays at 7:45am and 1:45pm
+# AEST/AEDT. Silent if nothing to report.
 #
 
 on:
@@ -39,7 +37,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - name: Find unreviewed PRs and notify Slack
+      - name: Find open PRs and notify Slack
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SLACK_WEBHOOK_URL: ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}
@@ -49,20 +47,6 @@ jobs:
 
           MAPPING=$(cat .github/draft-pr-slack-mapping.json)
 
-          # Single GraphQL query: open, non-draft, checks passing, no reviewer assigned.
-          # Only PRs authored by someone in draft-pr-slack-mapping.json are included,
-          # which filters out bots and unknown contributors automatically.
-          #
-          # CI filtering reads statusCheckRollup.state from the head commit rather than
-          # using "status:success" in the search query. The search qualifier treats any
-          # repo with ghost "queued" check suites (org-wide App integrations that never
-          # run — Buildkite, SonarQube, Renovate, etc.) as PENDING even when all real
-          # CI has passed. statusCheckRollup.state correctly reflects only checks that
-          # actually ran. Requires checks:read on the CI bot GitHub App installation.
-          #
-          # gh api graphql exits 1 when the response contains per-node permission errors.
-          # Capture stdout regardless — data.search.nodes is always present; PRs where
-          # state is null (app not installed on that repo) are excluded by the jq filter.
           GQL=$(gh api graphql -f query='
           {
             search(query: "org:pactflow is:pr is:open draft:false", type: ISSUE, first: 100) {
@@ -71,54 +55,37 @@ jobs:
                   title
                   url
                   createdAt
-                  author { login __typename }
-                  labels(first: 10) { nodes { name } }
-                  reviewRequests(first: 10) {
-                    nodes {
-                      requestedReviewer { __typename }
-                    }
-                  }
+                  author { login }
                   repository { name }
-                  commits(last: 1) {
-                    nodes {
-                      commit {
-                        statusCheckRollup { state }
-                      }
-                    }
-                  }
                 }
               }
             }
           }' 2>/dev/null || true)
 
+          if ! echo "$GQL" | jq -e '.data.search.nodes' >/dev/null 2>&1; then
+            echo "GraphQL query failed or returned unexpected structure" >&2
+            exit 1
+          fi
+
           PRS=$(echo "$GQL" | jq --argjson mapping "$MAPPING" '
             [.data.search.nodes[] |
-              select(
-                ($mapping[.author.login] != null) and
-                (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
-                # Exclude PRs with a human or team reviewer already assigned.
-                # Bot reviewers (e.g. Copilot) are intentionally ignored — a PR with
-                # only a bot reviewer still needs a human to pick it up.
-                ([.reviewRequests.nodes[] | select(.requestedReviewer.__typename == "User" or .requestedReviewer.__typename == "Team")] | length) == 0 and
-                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
-              ) |
+              select($mapping[.author.login] != null) |
               . + { slack_id: $mapping[.author.login].slack_id }
             ] | sort_by(.createdAt)
           ')
 
           COUNT=$(echo "$PRS" | jq 'length')
           if [ "$COUNT" -eq 0 ]; then
-            echo "No PRs awaiting a reviewer — skipping Slack notification."
+            echo "No open PRs — skipping Slack notification."
             exit 0
           fi
 
-          # Build Slack Block Kit payload
           NOW=$(date -u +%s)
           BLOCKS=$(echo "$PRS" | jq --argjson now "$NOW" '
             [
               {
                 "type": "header",
-                "text": { "type": "plain_text", "text": "PRs awaiting a reviewer — pactflow org", "emoji": true }
+                "text": { "type": "plain_text", "text": "Open PRs", "emoji": true }
               },
               {
                 "type": "section",
@@ -128,7 +95,7 @@ jobs:
                     map(
                       (.createdAt | sub("\\.[0-9]+Z$"; "Z") | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
                       (($now - $created) / 86400 | floor) as $days |
-                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  <@\(.slack_id)>  —  :white_check_mark: \($days)d ago"
+                      "• <\(.url)|\(.title)>  —  `\(.repository.name)`  —  <@\(.slack_id)>  —  \($days)d"
                     ) | join("\n")
                   )
                 }
