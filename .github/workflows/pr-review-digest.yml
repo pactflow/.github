@@ -7,7 +7,7 @@ name: PR Review Digest
 #   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
 #
 # Posts a digest of open, non-draft, human-authored pactflow org PRs that:
-#   - have no reviewer assigned
+#   - have no reviewer assigned and no existing approval
 #   - have all CI checks passing
 #   - do not carry the "DO NOT MERGE" label
 # Runs weekdays at 8:30am and 2:30pm AEST (UTC+10). Silent if nothing to report.
@@ -78,6 +78,9 @@ jobs:
                       requestedReviewer { __typename }
                     }
                   }
+                  reviews(first: 20) {
+                    nodes { state }
+                  }
                   repository { name }
                   commits(last: 1) {
                     nodes {
@@ -100,7 +103,8 @@ jobs:
                 # Bot reviewers (e.g. Copilot) are intentionally ignored — a PR with
                 # only a bot reviewer still needs a human to pick it up.
                 ([.reviewRequests.nodes[] | select(.requestedReviewer.__typename == "User" or .requestedReviewer.__typename == "Team")] | length) == 0 and
-                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
+                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS") and
+                (.reviews.nodes | map(select(.state == "APPROVED")) | length) == 0
               ) |
               . + { slack_id: $mapping[.author.login].slack_id }
             ] | sort_by(.createdAt)
