@@ -65,7 +65,7 @@ jobs:
           # state is null (app not installed on that repo) are excluded by the jq filter.
           GQL=$(gh api graphql -f query='
           {
-            search(query: "org:pactflow is:pr is:open draft:false review:none", type: ISSUE, first: 100) {
+            search(query: "org:pactflow is:pr is:open draft:false", type: ISSUE, first: 100) {
               nodes {
                 ... on PullRequest {
                   title
@@ -73,7 +73,11 @@ jobs:
                   createdAt
                   author { login __typename }
                   labels(first: 10) { nodes { name } }
-                  reviewRequests(first: 1) { totalCount }
+                  reviewRequests(first: 10) {
+                    nodes {
+                      requestedReviewer { __typename }
+                    }
+                  }
                   repository { name }
                   commits(last: 1) {
                     nodes {
@@ -92,7 +96,10 @@ jobs:
               select(
                 ($mapping[.author.login] != null) and
                 (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
-                (.reviewRequests.totalCount == 0) and
+                # Exclude PRs with a human or team reviewer already assigned.
+                # Bot reviewers (e.g. Copilot) are intentionally ignored — a PR with
+                # only a bot reviewer still needs a human to pick it up.
+                ([.reviewRequests.nodes[] | select(.requestedReviewer.__typename == "User" or .requestedReviewer.__typename == "Team")] | length) == 0 and
                 (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
               ) |
               . + { slack_id: $mapping[.author.login].slack_id }
