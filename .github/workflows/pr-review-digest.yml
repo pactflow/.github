@@ -71,7 +71,7 @@ jobs:
             [.data.search.nodes[] |
               select($mapping[.author.login] != null) |
               . + { slack_id: $mapping[.author.login].slack_id }
-            ] | sort_by(.createdAt)
+            ] | sort_by(.createdAt) | reverse
           ')
 
           COUNT=$(echo "$PRS" | jq 'length')
