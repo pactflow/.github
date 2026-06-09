@@ -47,20 +47,18 @@ jobs:
           # Only PRs authored by someone in draft-pr-slack-mapping.json are included,
           # which filters out bots and unknown contributors automatically.
           #
-          # NOTE: "status:success" is intentionally omitted from the search query.
-          # Org-wide GitHub App integrations (Buildkite, SonarQube, Renovate, etc.) register
-          # check suites on every commit but never run for repos with no config. These suites
-          # stay "queued" indefinitely, making GitHub's search consider the commit PENDING
-          # even when all real CI checks have passed. Instead we fetch statusCheckRollup.state
-          # for the head commit — this high-level rollup ignores never-started queued suites
-          # and reflects only the checks that actually ran.
-          # gh api graphql exits 1 when the response contains per-node errors
-          # (e.g. repos where the App token lacks statusCheckRollup access).
-          # Capture stdout regardless; the data.search.nodes array is always
-          # present. PRs where state is null are excluded by the jq filter.
-          GQL=$(gh api graphql -f query='
+          # CI filtering uses "status:success" in the search query — this is evaluated
+          # server-side by GitHub's search engine and works with the App token. Reading
+          # check status directly (statusCheckRollup) requires checks:read permission
+          # that the App token does not have.
+          #
+          # NOTE: repos with ghost "queued" check suites from org-wide App integrations
+          # (Buildkite, SonarQube, etc.) that never run will be missed by status:success
+          # even when all real CI passes. Fix: remove the unused App integrations from
+          # those repos, or grant the CI bot checks:read permission.
+          PRS=$(gh api graphql -f query='
           {
-            search(query: "org:pactflow is:pr is:open draft:false review:none", type: ISSUE, first: 100) {
+            search(query: "org:pactflow is:pr is:open draft:false review:none status:success", type: ISSUE, first: 100) {
               nodes {
                 ... on PullRequest {
                   title
@@ -70,25 +68,15 @@ jobs:
                   labels(first: 10) { nodes { name } }
                   reviewRequests(first: 1) { totalCount }
                   repository { name }
-                  commits(last: 1) {
-                    nodes {
-                      commit {
-                        statusCheckRollup { state }
-                      }
-                    }
-                  }
                 }
               }
             }
-          }' 2>/dev/null || true)
-
-          PRS=$(echo "$GQL" | jq --argjson mapping "$MAPPING" '
+          }' | jq --argjson mapping "$MAPPING" '
             [.data.search.nodes[] |
               select(
                 ($mapping[.author.login] != null) and
                 (.labels.nodes | map(.name) | any(. == "DO NOT MERGE") | not) and
-                (.reviewRequests.totalCount == 0) and
-                (.commits.nodes[0].commit.statusCheckRollup.state == "SUCCESS")
+                (.reviewRequests.totalCount == 0)
               ) |
               . + { slack_id: $mapping[.author.login].slack_id }
             ] | sort_by(.createdAt)
