@@ -41,14 +41,14 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ vars.PACTFLOW_CI_BOT_APP_ID }}
           private-key: ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}
           owner: pactflow
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Resolve timezone group
         id: tz
