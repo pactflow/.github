@@ -1,20 +1,23 @@
 name: PR Review Digest
 
 #
+# Cron triggers retired — the scheduled digest now runs from
+# pactflow/coverage-dashboard's pr-review-digest.yml, which decorates
+# each digest with portfolio stats (coverage, pact pass rate, health
+# score) and a per-person review-this-past-week podium pulled from the
+# dashboard's SQLite. See:
+#   https://github.com/pactflow/coverage-dashboard/blob/main/.github/workflows/pr-review-digest.yml
+#
+# Kept manual-only so it can be re-fired from the Actions tab as a
+# fallback if the new workflow ever breaks.
+#
 # Requirements:
 #   ${{ secrets.SMARTBEAR_SLACK_WEBHOOK_URL }}  (org secret — already exists)
 #   ${{ vars.PACTFLOW_CI_BOT_APP_ID }}           (org variable — already exists)
 #   ${{ secrets.PACTFLOW_CI_BOT_PRIVATE_KEY }}  (org secret — already exists)
 #
-# Posts a digest of all open, non-draft pactflow org PRs authored by someone
-# in .github/draft-pr-slack-mapping.json. Runs weekdays at 7:45am and 1:45pm
-# AEST/AEDT. Silent if nothing to report.
-#
 
 on:
-  schedule:
-    - cron: '45 21 * * 0-4'  # 7:45am AEST Mon–Fri (Sun–Thu UTC)
-    - cron: '45 3 * * 1-5'   # 1:45pm AEST Mon–Fri
   workflow_dispatch:
     inputs:
       dry_run:
